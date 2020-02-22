@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/csv"
+	"flag"
 	"fmt"
 	"io"
 	"os"
@@ -14,8 +15,12 @@ type Line struct {
 }
 
 func main() {
+	var filename string
+	flag.StringVar(&filename, "csv", "questions.csv", "A csv file with one question and answer per line")
+	flag.Parse()
+
 	// Open file
-	csvfile, err := os.Open("questions.csv")
+	csvfile, err := os.Open(filename)
 	if err != nil {
 		fmt.Println("Boo! Can't open file", err)
 	}
