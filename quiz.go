@@ -29,22 +29,16 @@ func main() {
 	// Reads file
 	r := csv.NewReader(csvfile)
 
-	var quiz []Line
-	// Saves file content into struct
-	for {
-		line, err := r.Read()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			fmt.Println("Cannot read file", err)
-		}
-
-		quiz = append(quiz, Line{
-			Question: line[0],
-			Answer:   line[1],
-		})
+	lines, err := r.ReadAll()
+	if err == io.EOF {
+		os.Exit(1)
 	}
+	if err != nil {
+		fmt.Println("cannot read file", err)
+		os.Exit(1)
+	}
+
+	quiz := parse(lines)
 
 	var score int
 	fmt.Println("Ready? Go!")
@@ -68,4 +62,16 @@ func main() {
 	}
 
 	fmt.Printf("Your score is: %v out of %v\n", score, len(quiz))
+}
+
+func parse(lines [][]string) []Line {
+	// Saves file content into struct
+	ques := make([]Line, len(lines)) // using make instead of append because the length is known, so no need to adjust size everytime
+	for i, line := range lines {
+		ques[i] = Line{
+			Question: line[0],
+			Answer:   line[1],
+		}
+	}
+	return ques
 }
