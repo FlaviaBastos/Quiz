@@ -22,7 +22,8 @@ func main() {
 	// Open file
 	csvfile, err := os.Open(filename)
 	if err != nil {
-		fmt.Println("Boo! Can't open file", err)
+		fmt.Printf("cannot open file %s. Error: %v", filename, err)
+		os.Exit(1)
 	}
 
 	// Reads file
