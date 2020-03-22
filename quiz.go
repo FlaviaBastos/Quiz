@@ -53,7 +53,7 @@ func main() {
 	timelimit := time.Duration(t) * time.Second
 
 	// get ready to start game
-	fmt.Println("Ready? Hit <ENTER> to start!")
+	fmt.Println("Ready? Hit <ENTER> to start!") // TO FIX: it needs to be ANY key
 	fmt.Scanln()
 
 	// start game
@@ -61,16 +61,15 @@ func main() {
 	go runQuiz(quiz, c)
 	timeout := time.After(timelimit)
 
-	// wait for either quiz to finish or time runs out
-	for {
-		select {
-		case total := <-c:
-			fmt.Printf("Your score is: %v out of %v\n", total, len(quiz))
-			return
-		case <-timeout:
-			fmt.Println("Time is up!")
-			return
-		}
+	// wait for either quiz to finish or time to run out
+	select {
+	case total := <-c:
+		fmt.Printf("Your score is: %v out of %v\n", total, len(quiz))
+		return
+	case <-timeout:
+		// fmt.Printf("Time is up! \n Your total score is %v out of %v\n", partial, len(quiz)) // TO FIX: Return score here too!
+		fmt.Printf("Time is up! \n Your total score is ?? out of %v\n", len(quiz)) // TO FIX: Return score here too!
+		return
 	}
 }
 
