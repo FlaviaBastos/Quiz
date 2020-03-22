@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"strconv"
 	"time"
 )
 
@@ -18,9 +17,8 @@ type Line struct {
 
 func main() {
 	var filename string
-	var timer string
 	flag.StringVar(&filename, "csv", "questions.csv", "A csv file with one question and answer per line")
-	flag.StringVar(&timer, "time", "30", "Quiz time limit in seconds")
+	timer := flag.Int("time", 30, "Quiz time limit in seconds")
 	flag.Parse()
 
 	// Open file
@@ -46,31 +44,44 @@ func main() {
 	quiz := parse(lines)
 
 	// determine time cap
-	t, err := strconv.Atoi(timer)
-	if err != nil {
-		fmt.Println("this is not a valid timeout value", err)
-	}
-	timelimit := time.Duration(t) * time.Second
+	timelimit := time.Duration(*timer) * time.Second
 
 	// get ready to start game
-	fmt.Println("Ready? Hit <ENTER> to start!") // TO FIX: it needs to be ANY key
+	fmt.Println("Ready? Hit <ENTER> to start!") // TO FIX: it needs to be ANY key -- not implemented in the video soultion though
 	fmt.Scanln()
 
 	// start game
-	c := make(chan int)
-	go runQuiz(quiz, c)
-	timeout := time.After(timelimit)
+	c := make(chan string)           // channel to read answers
+	timeout := time.After(timelimit) // channel for timeout
+	var score int
+	for _, question := range quiz {
+		var input string
+		fmt.Printf("Question: %v\n", question.Question)
+		fmt.Print("Type your answer: ")
+		go func() {
+			_, err := fmt.Scanln(&input)
 
-	// wait for either quiz to finish or time to run out
-	select {
-	case total := <-c:
-		fmt.Printf("Your score is: %v out of %v\n", total, len(quiz))
-		return
-	case <-timeout:
-		// fmt.Printf("Time is up! \n Your total score is %v out of %v\n", partial, len(quiz)) // TO FIX: Return score here too!
-		fmt.Printf("Time is up! \n Your total score is ?? out of %v\n", len(quiz)) // TO FIX: Return score here too!
-		return
+			if err != nil {
+				fmt.Println("Cannot read your answer")
+			}
+			c <- input
+		}()
+
+		// wait for either quiz to finish or time to run out
+		select {
+		case typed := <-c:
+			if typed == question.Answer {
+				fmt.Println("Correct")
+				score++
+			} else {
+				fmt.Println("Wrong")
+			}
+		case <-timeout:
+			fmt.Printf("Time is up! \n Your total score is %v out of %v\n", score, len(quiz))
+			return
+		}
 	}
+	fmt.Printf("Your score is: %v out of %v\n", score, len(quiz))
 }
 
 func parse(lines [][]string) []Line {
@@ -83,26 +94,4 @@ func parse(lines [][]string) []Line {
 		}
 	}
 	return ques
-}
-
-func runQuiz(quiz []Line, c chan int) {
-	var score int
-	for _, question := range quiz {
-		var input string
-		fmt.Printf("Question: %v\n", question.Question)
-		fmt.Print("Type your answer: ")
-		_, err := fmt.Scanln(&input)
-
-		if err != nil {
-			fmt.Println("Cannot read your answer")
-		}
-
-		if input == question.Answer {
-			fmt.Println("Correct")
-			score++
-		} else {
-			fmt.Println("Wrong")
-		}
-	}
-	c <- score
 }
